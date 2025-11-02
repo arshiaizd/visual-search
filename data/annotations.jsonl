@@ -1,0 +1,1 @@
+{"image": "images/example.png", "grid": 10, "patch": 28, "objects": [{"shape": "circle", "color": "green", "r": 3, "c": 7, "bbox": [196, 84, 224, 112]}]}
