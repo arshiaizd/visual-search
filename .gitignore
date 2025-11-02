@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# OS/editor
+.DS_Store
+*.swp
+
+# Project outputs & caches
+reports/
+data/images/
+*.npz
+*.parquet
+*.csv
+
+# HF cache (never commit)
+.huggingface/
+.cache/
