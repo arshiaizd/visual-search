@@ -49,7 +49,7 @@ def main():
                     npz_path = out/"attn_cache"/f"{stem}_{hash(prompt)%10**8}.npz"
                     np.savez(npz_path, **cache)
                     mean_over_heads = cache["attn"].mean(axis=1)  # (L,100)
-                    hm = heatmap_10x10(mean_over_heads[0])
+                    hm = heatmap_10x10(mean_over_heads[18])
                     overlay_grid(hm, grid=10)
                     hm = overlay_patches(hm, conf["tp"], outline=(0,255,0,255))
                     hm = overlay_patches(hm, conf["fn"], outline=(255,140,0,255))

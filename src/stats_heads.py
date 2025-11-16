@@ -48,7 +48,6 @@ def main():
 
     df = pd.DataFrame(rows)
     df.to_parquet(out/"per_head_features.parquet", index=False)
-
     results = []
     feat_cols = [c for c in df.columns if c.startswith("g_") or c.startswith("l_")]
     for (li,hi), g in df.groupby(["layer","head"]):
