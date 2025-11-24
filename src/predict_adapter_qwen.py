@@ -13,7 +13,7 @@ class QwenAdapter:
     def __init__(self, model_id: str, device: Optional[str] = None):
         self.model_id = model_id
         self.device = "cuda" #device or ("cuda" if torch.cuda.is_available() else "cpu")
-        self.processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
+        self.processor = AutoProcessor.from_pretrained(model_id, trust_remote_code=True, use_fast=False)
         self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
             model_id, 
             trust_remote_code=True,
@@ -71,17 +71,19 @@ class QwenAdapter:
                 "role": "user",
                 "content": [
                     {
+                        "type": "text",
+                        "text": prompt,
+                    },
+                    {
                         "type": "image",
                         "image": image_path,          # path string works with process_vision_info
                         "max_pixels": 512 * 28 * 28,  # same as your demo
                     },
-                    {
-                        "type": "text",
-                        "text": prompt,
-                    },
                 ],
             }
         ]
+
+
 
         # Vision info
         image_inputs, _ = process_vision_info(messages)
@@ -92,6 +94,7 @@ class QwenAdapter:
             tokenize=False,
             add_generation_prompt=True,
         )
+
 
         # Pack text + image into model inputs
         inputs = self.processor(
@@ -105,7 +108,7 @@ class QwenAdapter:
         # This mimics: image_inputs_aux = processor.image_processor(images=image_inputs)
         image_inputs_aux = self.processor.image_processor(images=image_inputs)
         # image_grid_thw: (1, 3) => (T, Htok, Wtok)
-        image_grid_thw = image_inputs_aux["image_grid_thw"].cpu().numpy().squeeze(0)
+        image_grid_thw = image_inputs_aux["image_grid_thw"].squeeze(0)
         # Your demo uses /2 here:
         #   output_shape = image_grid_thw[1:] / 2
         output_shape = (image_grid_thw[1] // 2, image_grid_thw[2] // 2)
@@ -192,6 +195,41 @@ class QwenAdapter:
         }
         return cache
 
+    @torch.inference_mode()
+    def generate_text(self, image_path: str, prompt: str) -> str:
+        """
+        Generic generation: same pipeline as predict_patches,
+        but returns raw text instead of parsing coordinates.
+        """
+        img = Image.open(image_path).convert("RGB")
+        messages = [
+            {"role": "user", "content": [
+                {"type": "text", "text": prompt},
+                {"type": "image", "image": img}
+            ]}
+        ]
+        text = self.processor.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+        image_inputs, video_inputs = process_vision_info(messages)
+        inputs = self.processor(
+            text=[text],
+            images=image_inputs,
+            videos=video_inputs,
+            padding=True,
+            return_tensors="pt",
+        ).to(self.device)
+
+        generated_ids = self.model.generate(**inputs, max_new_tokens=128)
+        generated_ids_trimmed = [
+            out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+        ]
+        output_text = self.processor.batch_decode(
+            generated_ids_trimmed,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=False
+        )[0]
+        return output_text
 
 _adapter_singleton: Optional[QwenAdapter] = None
 
@@ -206,3 +244,6 @@ def predict_patches(image_path: str, prompt: str, model_id: str):
 
 def get_attention_cache(image_path: str, prompt: str, model_id: str):
     return get_adapter(model_id).get_attention_cache(image_path, prompt)
+
+def generate_text(image_path: str, prompt: str, model_id: str) -> str:
+    return get_adapter(model_id).generate_text(image_path, prompt)

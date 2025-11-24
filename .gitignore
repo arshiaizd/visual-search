@@ -10,7 +10,7 @@ __pycache__/
 
 # Project outputs & caches
 reports/
-data/images/
+data/
 *.npz
 *.parquet
 *.csv

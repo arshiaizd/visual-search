@@ -1,16 +1,59 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [ -d "reports" ]; then
+    echo "Removing existing report directory..."
+    rm -r reports
+    echo "Report directory removed successfully."
+else
+    echo "Report directory does not exist. No action needed."
+fi
+
+# -----------------------------
+# Config (overridable via env)
+# -----------------------------
 ANN="${ANN:-data/annotations.jsonl}"
 OUT="${OUT:-reports}"
-FAMILY="${FAMILY:-en_find_green_circle}"
-QUERY='{"color":"green","shape":"circle"}'
-MODEL_ID="${MODEL_ID:-"/home/mmd/Desktop/Arshia/models/Qwen2.5-VL-7B-Instruct"}"
+FAMILY="${FAMILY:-exists_green_circle}"
+QUERY=${QUERY:-'{"color":"green","shape":"circle"}'}
+
+# Example default; override with: MODEL_ID=... bash scripts/run_visual_search.sh
+MODEL_ID="${MODEL_ID:-/home/mmd/Desktop/Arshia/models/Qwen2.5-VL-7B-Instruct}"
+
+# Task name must match src/tasks/*: coords, exists, ...
+TASK="${TASK:-exists}"
+
+# Whether to dump attention caches and figs (0 or 1)
 SAVE_ATTN="${SAVE_ATTN:-1}"
+
+# Stats grouping (used by run_stats; defaults assume 'correct' column in per_case.csv)
+GROUP_METRIC="${GROUP_METRIC:-correct}"
+POS_LABEL="${POS_LABEL:-True}"
+NEG_LABEL="${NEG_LABEL:-False}"
+
+# -----------------------------
+# Stage 2: evaluation
+# -----------------------------
 echo "== Stage 2: eval & prompt sensitivity =="
-python3 -m src.run_eval   --ann "$ANN"   --out "$OUT"   --family "$FAMILY"   --query "$QUERY"   --model_id "$MODEL_ID"   --save_attention "$SAVE_ATTN"
+python3 -m src.run_eval \
+  --ann "$ANN" \
+  --out "$OUT" \
+  --family "$FAMILY" \
+  --query "$QUERY" \
+  --model_id "$MODEL_ID" \
+  --task "$TASK" \
+  --save_attention "$SAVE_ATTN"
 
-echo "== Stage 4: per-head stats (TP vs FN) =="
-python3 -m src.run_stats   --attn_dir "$OUT/attn_cache"   --ann "$ANN"   --query "$QUERY"   --out "$OUT/stats"
+# -----------------------------
+# Stage 4: head-level stats
+# -----------------------------
+echo "== Stage 4: per-head stats (grouped by $GROUP_METRIC) =="
+python3 -m src.run_stats \
+  --attn_dir "$OUT/attn_cache" \
+  --out "$OUT/stats" \
+  --per_case "$OUT/per_case.csv" \
+  --group_metric "$GROUP_METRIC" \
+  --pos_label "$POS_LABEL" \
+  --neg_label "$NEG_LABEL"
 
-echo "Done. See $OUT/"
+echo "Done. See $OUT/ and $OUT/stats/"
