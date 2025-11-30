@@ -63,8 +63,8 @@ class BaseTask:
         Run the model and return raw output text for a given (image, prompt).
         Default implementation uses Qwen adapter's generate_text.
         """
-        from src import predict_adapter_qwen as Q
-        return Q.generate_text(image_path, prompt, model_id)
+        from src.models import predict_adapter as PA
+        return PA.generate_text(image_path, prompt, model_id)
 
     def parse_prediction(self, raw_text: str) -> Any:
         """

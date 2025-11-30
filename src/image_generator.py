@@ -128,8 +128,8 @@ if __name__ == "__main__":
 
     os.makedirs("data/images", exist_ok=True)
     random.seed(42)  # optional reproducibility
-    NUM_OBJECTS = 20
-    MANHATTAN_DIST = 1
+    NUM_OBJECTS = 3
+    MANHATTAN_DIST = 5
     GREEN_CIRCLE = 1
     OTHER_OBJECTS = 0
     NUMBER_OF_IMAGES = 50

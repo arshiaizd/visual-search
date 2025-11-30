@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from src.dataset_io import read_annotations
 from tasks import get_task, CaseReport
-from src import predict_adapter_qwen as Q
+from src.models import predict_adapter as PA
 from src.viz import heatmap_10x10, overlay_grid, overlay_patches
 
 
@@ -84,7 +84,7 @@ def main():
             # 2) optional: save attention + preview figure
 
             if args.save_attention:
-                cache = Q.get_attention_cache(
+                cache = PA.get_attention_cache(
                     img_path, prompt, model_id=args.model_id
                 )
                 if cache is not None and "attn" in cache:
