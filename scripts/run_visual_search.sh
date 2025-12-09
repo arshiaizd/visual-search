@@ -17,8 +17,15 @@ OUT="${OUT:-reports}"
 FAMILY="${FAMILY:-exists_green_circle}"
 QUERY=${QUERY:-'{"color":"green","shape":"circle"}'}
 
-# Example default; override with: MODEL_ID=... bash scripts/run_visual_search.sh
-MODEL_ID="${MODEL_ID:-/home/mmd/Desktop/Arshia/models/Qwen2.5-VL-7B-Instruct}"
+export PYTHONPATH="${PYTHONPATH:-}:/home/mmd/Desktop/Arshia/models/InternVL3_5-8B/snapshots/9bb6a56ad9cc69db95e2d4eeb15a52bbcac4ef79/"
+
+
+InternVL_ID="/home/mmd/Desktop/Arshia/models/InternVL3_5-8B/snapshots/9bb6a56ad9cc69db95e2d4eeb15a52bbcac4ef79/"
+Qwen_ID="/home/mmd/Desktop/Arshia/models/Qwen2.5-VL-7B-Instruct"
+
+
+MODEL_ID="$InternVL_ID"
+
 
 # Task name must match src/tasks/*: coords, exists, ...
 TASK="${TASK:-exists}"

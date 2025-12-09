@@ -247,3 +247,7 @@ def get_attention_cache(image_path: str, prompt: str, model_id: str):
 
 def generate_text(image_path: str, prompt: str, model_id: str) -> str:
     return get_adapter(model_id).generate_text(image_path, prompt)
+
+def supports(model_id: str) -> bool:
+    mid = model_id.lower()
+    return "qwen" in mid

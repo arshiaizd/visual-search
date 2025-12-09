@@ -200,7 +200,7 @@ if __name__ == "__main__":
     MANHATTAN_DIST = 1
     GREEN_CIRCLE = 1
     OTHER_OBJECTS = 0
-    NUMBER_OF_IMAGES = 500
+    NUMBER_OF_IMAGES = 5
     gen_with_green_circle = ObjectGenerator(
         min_manhattan_dist=MANHATTAN_DIST,
         allowed_shapes=list(ALL_SHAPES - {"red_circle", "blue_circle", "yellow_circle", "green_square", "green_triangle", "green_star"}),
