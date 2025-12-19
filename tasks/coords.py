@@ -30,7 +30,7 @@ class PatchCoordinatesTask(BaseTask):
         gt: Set[Tuple[int, int]],
         pred: Set[Tuple[int, int]],
     ) -> Dict[str, Any]:
-        grid = int(rec.get("grid", 10))
+        grid = int(rec["grid"])
         conf = confusion_per_image(gt, pred, grid=grid)
         tp, fp, fn = conf["tp"], conf["fp"], conf["fn"]
 

@@ -14,7 +14,7 @@ def gini(p):
 def spread_above(p, thr=0.02):
     q = _norm(p); return float((q>=thr).mean())
 
-def to_mask(gt_set, grid=10):
+def to_mask(gt_set, grid=12):
     m = np.zeros((grid,grid), dtype=np.float32)
     for (r,c) in gt_set: m[r,c]=1.0
     return m.reshape(-1)

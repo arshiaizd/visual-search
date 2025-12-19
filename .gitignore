@@ -12,6 +12,7 @@ __pycache__/
 reports/
 data/
 data500/
+data1000/
 *.npz
 *.parquet
 *.csv

@@ -8,7 +8,7 @@ import torch
 import numpy as np
 from PIL import Image
 
-def _avg_pool_to_10x10(attn_map_hw: torch.Tensor, grid: int = 10):
+def _avg_pool_to_grid(attn_map_hw: torch.Tensor, grid: int):
     # Always work in float32 for pooling / numpy conversion
     attn_map_hw = attn_map_hw.to(torch.float32)
 
@@ -24,17 +24,33 @@ def _avg_pool_to_10x10(attn_map_hw: torch.Tensor, grid: int = 10):
             patch = attn_map_hw[r0:r1, c0:c1]
             pooled[r, c] = patch.mean() if patch.numel() > 0 else 0.0
 
+    # v = pooled.flatten()
+    # v = v / (v.sum() + 1e-12)
+    
+    orig_sum = float(attn_map_hw.sum().item())
     v = pooled.flatten()
-    v = v / (v.sum() + 1e-12)
+    v *= orig_sum / (float(v.sum().item()) + 1e-12)
+
     return v.detach().cpu().numpy()
 
 
-def aggregate_attentions_to_10x10(attn_per_layer_head: List[List[torch.Tensor]], token_hw: Tuple[int,int]):
+def aggregate_attentions_to_grid(
+    attn_per_layer_head: List[List[torch.Tensor]],
+    token_hw: Tuple[int, int],
+    grid_size: int,
+) -> np.ndarray:
+    """
+    attn_per_layer_head: list over layers, each a list over heads, each (H, W) tensor
+    token_hw:            (H, W) of the original token grid (kept for completeness)
+    grid_size:           patch grid size (e.g. 10 for 10x10, 12 for 12x12)
+    returns:             (L, Hh, grid_size*grid_size) numpy array
+    """
     L = len(attn_per_layer_head)
-    Hh = len(attn_per_layer_head[0]) if L>0 else 0
-    out = np.zeros((L, Hh, 100), dtype=np.float32)
+    Hh = len(attn_per_layer_head[0]) if L > 0 else 0
+
+    out = np.zeros((L, Hh, grid_size * grid_size), dtype=np.float32)
     for li in range(L):
         for hi in range(Hh):
-            v = _avg_pool_to_10x10(attn_per_layer_head[li][hi])
-            out[li,hi] = v
+            v = _avg_pool_to_grid(attn_per_layer_head[li][hi], grid=grid_size)
+            out[li, hi] = v
     return out

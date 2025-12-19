@@ -12,7 +12,7 @@ from transformers import AutoTokenizer, AutoModel, GenerationConfig
 from conversation import get_conv_template  # same as in your working script
 
 from src.parse_patches import parse_patch_pairs
-from src.attn_hooks_qwen import aggregate_attentions_to_10x10  # reuse pooling
+from src.attn_hooks_qwen import aggregate_attentions_to_grid  # reuse pooling
 
 
 # ---------- image preprocessing (copied from your working script) ----------
@@ -231,7 +231,7 @@ class InternVLAdapter:
         Run InternVL with attentions and return a cache dict compatible with run_eval/run_stats:
 
           {
-            "attn": (L, H, 100) np.float32,
+            "attn": (L, H, 144) np.float32,
             "token_hw": (Htok, Wtok),
             "meta": {...},
             "debug": {...},
@@ -294,9 +294,11 @@ class InternVLAdapter:
             per_layer_head_maps.append(head_maps)
 
         # 6) pool to 10×10 and flatten → (L, Hh, 100)
-        attn_10x10 = aggregate_attentions_to_10x10(
+        
+        attn_10x10 = aggregate_attentions_to_grid(
             per_layer_head_maps,
             token_hw=(Htok, Wtok),
+            grid_size= 12
         )
 
         # 7) build meta so run_stats.py can index by (image, prompt)

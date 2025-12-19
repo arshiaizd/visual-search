@@ -1,6 +1,6 @@
 from typing import Dict, List
 
-def confusion_per_image(gt, pr, grid=10):
+def confusion_per_image(gt, pr, grid=12):
     gt, pr = set(gt), set(pr)
     tp = gt & pr
     fn = gt - pr

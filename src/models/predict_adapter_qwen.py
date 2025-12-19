@@ -7,7 +7,7 @@ import torch
 from transformers import AutoProcessor, AutoModelForCausalLM, Qwen2_5_VLForConditionalGeneration
 from qwen_vl_utils import process_vision_info
 from src.parse_patches import parse_patch_pairs
-from src.attn_hooks_qwen import aggregate_attentions_to_10x10
+from src.attn_hooks_qwen import aggregate_attentions_to_grid
 
 class QwenAdapter:
     def __init__(self, model_id: str, device: Optional[str] = None):
@@ -173,12 +173,13 @@ class QwenAdapter:
             attn_per_layer_head.append(head_maps)
 
         # ---- 6) Aggregate to 10x10 grid => (L, H, 100) ----
-        # aggregate_attentions_to_10x10 expects:
+        # aggregate_attentions_to_grid expects:
         #   attn_per_layer_head: list[layer][head] -> 2D array
         #   token_hw: (Htok, Wtok)
-        attn_10x10 = aggregate_attentions_to_10x10(
+        attn_10x10 = aggregate_attentions_to_grid(
             attn_per_layer_head,
             token_hw=(Htok, Wtok),
+            grid_size=12
         )  # should be (L, H, 100)
 
         attn_10x10 = np.asarray(attn_10x10, dtype=np.float32)

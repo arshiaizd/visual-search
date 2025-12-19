@@ -24,7 +24,7 @@ InternVL_ID="/home/mmd/Desktop/Arshia/models/InternVL3_5-8B/snapshots/9bb6a56ad9
 Qwen_ID="/home/mmd/Desktop/Arshia/models/Qwen2.5-VL-7B-Instruct"
 
 
-MODEL_ID="$InternVL_ID"
+MODEL_ID="$Qwen_ID"
 
 
 # Task name must match src/tasks/*: coords, exists, ...

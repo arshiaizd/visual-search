@@ -6,7 +6,7 @@ import math
 from PIL import Image, ImageDraw
 
 class ObjectGenerator:
-    def __init__(self, patch_size=28, grid_size=10, min_manhattan_dist=1,
+    def __init__(self, patch_size=28, grid_size=12, min_manhattan_dist=1,
                  allowed_shapes=None, max_counts=None, min_counts=None):
         self.patch_size = patch_size
         self.grid_size = grid_size
@@ -54,15 +54,15 @@ class ObjectGenerator:
 
         # ---- shape ----
         if "square" in shape_name:
-            draw.rectangle(box, fill=color)
+            draw.rectangle(box, outline=color, width=2)
         elif "circle" in shape_name:
-            draw.ellipse(box, fill=color)
+            draw.ellipse(box, outline=color, width=2)
         elif "triangle" in shape_name:
             # Upright triangle
             p1 = (cx, cy - half)
             p2 = (cx - half, cy + half)
             p3 = (cx + half, cy + half)
-            draw.polygon([p1, p2, p3], fill=color)
+            draw.polygon([p1, p2, p3], outline=color, width=2)
         elif "star" in shape_name:
             # 5-pointed star
             outer_r = half
@@ -74,7 +74,7 @@ class ObjectGenerator:
                 x = cx + int(r * math.cos(angle))
                 y = cy + int(r * math.sin(angle))
                 points.append((x, y))
-            draw.polygon(points, fill=color)
+            draw.polygon(points, outline=color, width=2)
         else:
             # fallback: circle
             raise NotImplementedError(f"The specified shape ({shape_name}) is not implemented")
@@ -190,39 +190,110 @@ ALL_SHAPES = {
 }
 
 if __name__ == "__main__":
+    # Clean old data
     if os.path.exists("data") and os.path.isdir("data"):
         shutil.rmtree("data")
 
-
     os.makedirs("data/images", exist_ok=True)
-    random.seed(42)  # optional reproducibility
-    NUM_OBJECTS = 20
-    MANHATTAN_DIST = 1
-    GREEN_CIRCLE = 1
-    OTHER_OBJECTS = 0
-    NUMBER_OF_IMAGES = 5
-    gen_with_green_circle = ObjectGenerator(
+
+    random.seed(42)
+
+    GRID_SIZE = 12
+    NUM_OBJECTS = 15
+    MANHATTAN_DIST = 2
+    TARGET_SHAPE = "green_circle"
+    NUMBER_OF_PAIRS = 200  # <-- choose how many pairs you want
+
+    # Allowed shapes: include TARGET_SHAPE plus any non-target shapes you like
+    
+    allowed_shapes = [
+    # "red_square", "blue_square", "yellow_square",
+    # "green_circle",
+    # "red_triangle", "blue_triangle", "yellow_triangle",
+    # "red_star", "blue_star", "yellow_star"
+    "red_circle", "green_circle", "blue_circle", "yellow_circle",
+    ]
+
+    non_target_shapes = [
+    # "red_square", "blue_square", "yellow_square",
+    # "red_triangle", "blue_triangle", "yellow_triangle",
+    # "red_star", "blue_star", "yellow_star"
+    "red_circle", "blue_circle", "yellow_circle",
+    ]
+    
+
+
+    # Generator that produces exactly ONE target per image
+    gen_with_target = ObjectGenerator(
+        patch_size=28,
+        grid_size=GRID_SIZE,
         min_manhattan_dist=MANHATTAN_DIST,
-        allowed_shapes=list(ALL_SHAPES - {"red_circle", "blue_circle", "yellow_circle", "green_square", "green_triangle", "green_star"}),
-        max_counts={"green_circle": GREEN_CIRCLE},
-        min_counts={"green_circle": GREEN_CIRCLE}
+        allowed_shapes=allowed_shapes,
+        max_counts={TARGET_SHAPE: 1},   # at most 1 target
+        min_counts={TARGET_SHAPE: 1},   # at least 1 target
     )
-    gen_without_green_circle = ObjectGenerator(
-        min_manhattan_dist=MANHATTAN_DIST,
-        allowed_shapes=list(ALL_SHAPES - {"red_circle", "blue_circle", "yellow_circle", "green_square", "green_triangle", "green_star"}),
-        max_counts={"green_circle": 0},
-        min_counts={"green_circle": 0}
-    )
+
     with open("data/annotations.jsonl", "w", encoding="utf-8") as ann_file:
-        for i in range(NUMBER_OF_IMAGES):
-            img, placed = gen_with_green_circle.generate(num_objects=NUM_OBJECTS)
-            fname = f"data/images/img_{i:05d}.png"
-            img.save(fname)
-            ann = gen_with_green_circle.annotation_dict(fname, placed)
-            ann_file.write(json.dumps(ann) + "\n")
-        for i in range(NUMBER_OF_IMAGES, 2 * NUMBER_OF_IMAGES):
-            img, placed = gen_without_green_circle.generate(num_objects=NUM_OBJECTS)
-            fname = f"data/images/img_{i:05d}.png"
-            img.save(fname)
-            ann = gen_without_green_circle.annotation_dict(fname, placed)
-            ann_file.write(json.dumps(ann) + "\n")
+        for pair_id in range(NUMBER_OF_PAIRS):
+
+            # ----- 1) Generate an image WITH target, interior (for 3x3 neighborhood) -----
+            while True:
+                img_with, placed = gen_with_target.generate(num_objects=NUM_OBJECTS)
+                # find the single target
+                target_list = [(s, r, c) for (s, r, c) in placed if s == TARGET_SHAPE]
+                assert len(target_list) == 1, "Generator did not produce exactly one target"
+                _, tr, tc = target_list[0]
+
+                # ensure target is not on the border so we have full 3x3 neighborhood
+                if 1 <= tr <= GRID_SIZE - 2 and 1 <= tc <= GRID_SIZE - 2:
+                    break  # accept this sample; otherwise regenerate
+
+            # ----- 2) Build matching image WITHOUT target (same layout, different shape) -----
+            # Replace the target shape with some non-target shape in the same cell
+            replacement_candidates = non_target_shapes  # anything except TARGET_SHAPE
+
+            placed_without = []
+            for (shape_name, r, c) in placed:
+                if shape_name == TARGET_SHAPE:
+                    new_shape = random.choice(replacement_candidates)
+                    placed_without.append((new_shape, r, c))
+                else:
+                    placed_without.append((shape_name, r, c))
+
+            # Draw the "without target" image manually
+            full = gen_with_target.patch_size * gen_with_target.grid_size
+            img_without = Image.new("RGB", (full, full), (255, 255, 255))
+            for shape_name, r, c in placed_without:
+                obj_img = gen_with_target.draw_shape_in_patch(shape_name)
+                img_without.paste(obj_img, (c * gen_with_target.patch_size,
+                                            r * gen_with_target.patch_size))
+
+            # ----- 3) Save both images -----
+            fname_with = f"data/images/pair_{pair_id:05d}_with.png"
+            fname_without = f"data/images/pair_{pair_id:05d}_without.png"
+            img_with.save(fname_with)
+            img_without.save(fname_without)
+
+            # ----- 4) Write annotations (include pair info + target coords) -----
+            ann_with = gen_with_target.annotation_dict(fname_with, placed)
+            ann_with["pair_id"] = pair_id
+            ann_with["has_target"] = True
+            ann_with["target"] = {
+                "shape": "circle",
+                "color": "green",
+                "r": tr,
+                "c": tc,
+            }
+
+            ann_without = gen_with_target.annotation_dict(fname_without, placed_without)
+            ann_without["pair_id"] = pair_id
+            ann_without["has_target"] = False
+            ann_without["target"] = {
+                "shape": "circle",
+                "color": "green",
+                "r": tr,
+                "c": tc,
+            }
+
+            ann_file.write(json.dumps(ann_with) + "\n")
+            ann_file.write(json.dumps(ann_without) + "\n")
