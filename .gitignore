@@ -13,6 +13,7 @@ reports/
 data/
 data500/
 data1000/
+data-izadi/
 *.npz
 *.parquet
 *.csv
