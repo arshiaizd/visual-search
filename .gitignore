@@ -10,10 +10,12 @@ __pycache__/
 
 # Project outputs & caches
 reports/
-data/
+data*/
 data500/
 data1000/
 data-izadi/
+izadi_result/
+reports*/
 *.npz
 *.parquet
 *.csv

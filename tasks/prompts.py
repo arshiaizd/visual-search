@@ -20,31 +20,33 @@ PROMPT_FAMILIES = {
     # ------------------------------------------------
     # Exists task: yes/no answer about presence of a green circle
     # ------------------------------------------------
-    "exists_green_circle": [
-        # (
-        #     "Does this image contain at least one green circle? "
-        #     "Answer only 'yes' or 'no'."
-        # ),
-        # (
-        #     "Is there any green circle anywhere in this 10x10 grid? "
-        #     "Respond with a single word: 'yes' or 'no'."
-        # ),
-        (
-            "Check the image: does it include a green circle in any patch? "
-            "Reply strictly with 'yes' or 'no'."
-        ),
-        # (
-        #     "Look carefully at all 10x10 patches in the image. "
-        #     "If you clearly see at least one green circle, answer 'yes'. "
-        #     "If you do not clearly see any green circle, answer 'no'. "
-        #     "Reply with exactly one word: 'yes' or 'no'."
-        # ),
-        # (
-        #     "Decide whether the image contains a green circle. "
-        #     "Base your answer only on what is visible. "
-        #     "If you are not sure you see a green circle, answer 'no'. "
-        #     "Respond with a single word: 'yes' or 'no'."
-        # ),
-    ]
+"exists_green_circle": [
+    (
+        "Check the image: does it include a green circle in any patch? "
+        "Reply strictly with 'yes' or 'no'."
+    ),
+    # (
+    #     "Describe the image in detail. What are the objects or shapes in the image, and how many are they?"
+    # ),
+    # (
+    #     "Check the image: does it include a green circle in any patch? "
+    #     "Reply with 'yes' or 'no' followed by a comma and the location of the green circle: "
+    #     "one of 'up', 'down', 'left', 'right', 'center'. "
+    #     "If there is no green circle, reply strictly with 'no'."
+    # ),
+    # (
+    #     "Check the image: does it include a green circle in any patch? "
+    #     "If yes, reply with 'yes' followed by a comma and the closest visible coordinate label to the green circle "
+    #     "(copy the coordinate exactly as written). "
+    #     "If there is no green circle, reply strictly with 'no'."
+    # ),
+    # (
+    #     "Check the image: does it include a green circle in any patch? "
+    #     "If yes, reply with 'yes' followed by a comma and the (x, y) coordinate of the green circle's center in pixels, "
+    #     "with x increasing to the right and y increasing downward (format: '(x,y)'). "
+    #     "If there is no green circle, reply strictly with 'no'."
+    # ),
+]
+
 
 }
